@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""
-Genetic algorithm for the Minimum Dominating Set problem.
-Python port of the C++ reference implementation.
 
-Reads a DIMACS-like .gr graph from stdin, runs a steady-state GA, and on
-SIGTERM/SIGINT prints the best dominating set found (size, then 1-indexed
-vertices, one per line).
-"""
 
 import sys
 import signal
@@ -14,9 +7,7 @@ import random
 from typing import List, Tuple
 
 POP_SIZE = 40
-DEBUG = False  # toggle to mirror DEBUG_BUILD
-
-# ############### Graph ###############
+DEBUG = False
 
 Graph = List[List[int]]
 
@@ -51,8 +42,6 @@ def get_uncovered_vertices(adj: Graph, dom_set: List[bool]) -> List[int]:
     return [u for u in range(n) if not covered[u]]
 
 
-# ############### GA Methods ###############
-
 class Individual:
     __slots__ = ("dom_set", "fitness")
 
@@ -77,21 +66,12 @@ def tournament_select(pop: List[Individual], k: int = 2) -> Individual:
     return best
 
 
-def random_select(pop: List[Individual]) -> Individual:
-    return pop[random.randrange(len(pop))]
-
-
 def best_select_idx(pop: List[Individual]) -> int:
     return min(range(len(pop)), key=lambda i: pop[i].fitness)
 
 
 def worst_select_idx(pop: List[Individual]) -> int:
     return max(range(len(pop)), key=lambda i: pop[i].fitness)
-
-
-def full_repair(adj: Graph, dom_set: List[bool]) -> None:
-    for u in get_uncovered_vertices(adj, dom_set):
-        dom_set[u] = True
 
 
 def greedy_random_repair(adj: Graph, dom_set: List[bool]) -> None:
@@ -180,9 +160,6 @@ def greedy_priority_bucket_repair(adj: Graph, dom_set: List[bool]) -> None:
             covered[v] = True
             covered_count += 1
 
-        # Two-pass mirror of the C++: first newly-covered neighbours propagate
-        # gain decrements to *their* uncovered neighbours, then the neighbours
-        # of v themselves get their own gain decremented if still uncovered.
         for neigh in adj[v]:
             if not covered[neigh]:
                 covered[neigh] = True
@@ -224,26 +201,6 @@ def greedy_local_removal(adj: Graph, dom_set: List[bool]) -> None:
                 coverage[v] -= 1
 
 
-def random_mutate(dom_set: List[bool], mutate_prob: float) -> None:
-    for i in range(len(dom_set)):
-        if random.random() < mutate_prob:
-            dom_set[i] = random.random() < 0.5
-
-
-def false_mutate(dom_set: List[bool], mutate_prob: float) -> None:
-    for i in range(len(dom_set)):
-        if random.random() < mutate_prob:
-            dom_set[i] = False
-
-
-def uniform_crossover(a: Individual, b: Individual) -> Individual:
-    n = len(a.dom_set)
-    child = Individual([False] * n)
-    for i in range(n):
-        child.dom_set[i] = a.dom_set[i] if random.random() < 0.5 else b.dom_set[i]
-    return child
-
-
 def set_intersection_crossover(a: Individual, b: Individual) -> Individual:
     n = len(a.dom_set)
     child = Individual([False] * n)
@@ -257,8 +214,6 @@ def replace_weakest(pop: List[Individual], child: Individual) -> None:
     if child.fitness < pop[idx].fitness:
         pop[idx] = child
 
-
-# ############### main ###############
 
 best = Individual()
 
